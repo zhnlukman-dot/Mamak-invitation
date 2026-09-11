@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mamak & Coding Session Invitation</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: #1e1e1e; border: 1px solid #333; padding: 2rem; border-radius: 16px; text-align: center; max-width: 400px; width: 100%; }
+        h2 { color: #fff; margin-top: 0; }
+        .badge { background: #333; color: #ffb703; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-bottom: 1rem; }
+        .details { text-align: left; background: #2a2a2a; padding: 1rem; border-radius: 10px; margin: 1.5rem 0; font-size: 0.95rem; line-height: 1.6; }
+        .btn-group { display: flex; gap: 10px; margin-top: 1.5rem; }
+        button { flex: 1; padding: 12px; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
+        .accept { background: #2ea44f; color: white; }
+        .decline { background: #da3633; color: white; }
+        .status-box { margin-top: 1.5rem; padding: 1rem; background: #2a2a2a; border-radius: 8px; font-weight: bold; font-size: 1.2rem; }
+        .status-accepted { color: #2ea44f; }
+        .status-declined { color: #da3633; }
+        .status-pending { color: #ffb703; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="badge">☕💻 Mamak & Coding</div>
+    <h2>Invitation</h2>
+
+    <div class="details">
+        <div><strong>📍 Location:</strong> Restoran Malik</div>
+        <div><strong>⏰ Time:</strong> 9:30 PM – 10:30 PM</div>
+        <div><strong>👥 Guests:</strong> Mr. Adli & Wife</div>
+    </div>
+
+    <!-- Wife View -->
+    <div id="wife-view">
+        <p>Would you like to join us?</p>
+        <div class="btn-group">
+            <button class="accept" onclick="respond('ACCEPTED')">Accept</button>
+            <button class="decline" onclick="respond('DECLINED')">Decline</button>
+        </div>
+        <div id="result" style="margin-top: 15px; font-weight: bold;"></div>
+    </div>
+
+    <!-- Host View -->
+    <div id="host-view" style="display: none;">
+        <p><strong>Wife's Response:</strong></p>
+        <div id="status" class="status-box status-pending">Checking...</div>
+    </div>
+</div>
+
+<script>
+    const BIN_ID = '65e89d1bdc746540e8af4b12';
+    const API_KEY = '$2a$10$p2uQG1O5S9E/3F42XQ2Eue2Qn2J1S6V1G2.1A2B3C4D5E6F7G8H9I';
+
+    const isHost = new URLSearchParams(window.location.search).get('role') === 'host';
+
+    if (isHost) {
+        document.getElementById('wife-view').style.display = 'none';
+        document.getElementById('host-view').style.display = 'block';
+        checkStatus();
+        setInterval(checkStatus, 4000);
+    }
+
+    function respond(answer) {
+        document.getElementById('result').innerText = "Sending response...";
+        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+            body: JSON.stringify({ rsvp: answer })
+        })
+        .then(() => {
+            document.getElementById('result').innerText = answer === 'ACCEPTED' ? "✅ Sent: Accepted!" : "❌ Sent: Declined";
+        });
+    }
+
+    function checkStatus() {
+        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': API_KEY } })
+        .then(res => res.json())
+        .then(data => {
+            const statusDiv = document.getElementById('status');
+            const rsvp = data.record.rsvp;
+            if (rsvp === 'ACCEPTED') { statusDiv.innerText = 'ACCEPTED ✅'; statusDiv.className = 'status-box status-accepted'; }
+            else if (rsvp === 'DECLINED') { statusDiv.innerText = 'DECLINED ❌'; statusDiv.className = 'status-box status-declined'; }
+            else { statusDiv.innerText = 'Waiting for response...'; }
+        });
+    }
+</script>
+
+</body>
+</html>
