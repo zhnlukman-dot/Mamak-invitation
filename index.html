@@ -12,7 +12,8 @@
         .badge { background: #333; color: #ffb703; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-bottom: 1rem; }
         .details { text-align: left; background: #2a2a2a; padding: 1rem; border-radius: 10px; margin: 1.5rem 0; font-size: 0.95rem; line-height: 1.6; }
         .btn-group { display: flex; gap: 10px; margin-top: 1.5rem; }
-        button { flex: 1; padding: 12px; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
+ 
+    button { flex: 1; padding: 12px; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
         .accept { background: #2ea44f; color: white; }
         .decline { background: #da3633; color: white; }
         .status-box { margin-top: 1.5rem; padding: 1rem; background: #2a2a2a; border-radius: 8px; font-weight: bold; font-size: 1.2rem; }
@@ -51,6 +52,7 @@
 </div>
 
 <script>
+    // Replace with your exact BIN_ID and X-Master-Key from jsonbin.io
     const BIN_ID = '65e89d1bdc746540e8af4b12';
     const API_KEY = '$2a$10$p2uQG1O5S9E/3F42XQ2Eue2Qn2J1S6V1G2.1A2B3C4D5E6F7G8H9I';
 
@@ -60,30 +62,52 @@
         document.getElementById('wife-view').style.display = 'none';
         document.getElementById('host-view').style.display = 'block';
         checkStatus();
-        setInterval(checkStatus, 4000);
+        setInterval(checkStatus, 3000); // Check every 3 seconds
     }
 
     function respond(answer) {
         document.getElementById('result').innerText = "Sending response...";
         fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-Master-Key': API_KEY 
+            },
             body: JSON.stringify({ rsvp: answer })
         })
+        .then(res => res.json())
         .then(() => {
             document.getElementById('result').innerText = answer === 'ACCEPTED' ? "✅ Sent: Accepted!" : "❌ Sent: Declined";
+        })
+        .catch(err => {
+            document.getElementById('result').innerText = "⚠️ Network Error. Try again.";
         });
     }
 
     function checkStatus() {
-        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': API_KEY } })
+        // Cache buster parameter ensures mobile safari/chrome gets real-time data
+        fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest?nocache=${new Date().getTime()}`, { 
+            headers: { 'X-Master-Key': API_KEY } 
+        })
         .then(res => res.json())
         .then(data => {
             const statusDiv = document.getElementById('status');
-            const rsvp = data.record.rsvp;
-            if (rsvp === 'ACCEPTED') { statusDiv.innerText = 'ACCEPTED ✅'; statusDiv.className = 'status-box status-accepted'; }
-            else if (rsvp === 'DECLINED') { statusDiv.innerText = 'DECLINED ❌'; statusDiv.className = 'status-box status-declined'; }
-            else { statusDiv.innerText = 'Waiting for response...'; }
+            const rsvp = data.record ? data.record.rsvp : null;
+
+            if (rsvp === 'ACCEPTED') { 
+                statusDiv.innerText = 'ACCEPTED ✅'; 
+                statusDiv.className = 'status-box status-accepted'; 
+            } else if (rsvp === 'DECLINED') { 
+                statusDiv.innerText = 'DECLINED ❌'; 
+                statusDiv.className = 'status-box status-declined'; 
+            } else { 
+                statusDiv.innerText = 'Waiting for response...'; 
+                statusDiv.className = 'status-box status-pending';
+            }
+        })
+        .catch(err => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = 'Checking connection...';
         });
     }
 </script>
